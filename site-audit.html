@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SEO Audit Tool</title>
+<title>SEO Audit Tool — Life Cruise Destiny</title>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
 <style>
   :root {
@@ -704,7 +704,7 @@
   <div class="input-section">
     <label class="input-label">Website URL to audit</label>
     <div class="url-row">
-      <input type="text" class="url-input" id="urlInput" placeholder="https://example.com">
+      <input type="text" class="url-input" id="urlInput" placeholder="https://lifecruisedestiny.com" value="https://lifecruisedestiny.com">
       <button class="btn-audit" id="auditBtn" onclick="startAudit()">
         <span id="btnIcon">⚡</span>
         <span id="btnText">Start audit</span>
@@ -886,7 +886,7 @@ async function startAudit() {
     if (apiKey) {
       await generateAIRecommendations(url, analysisResult, apiKey);
     } else {
-      document.getElementById('ai-section').style.display = 'none';
+      renderRuleBasedRecommendations(url, analysisResult);
     }
 
   } catch(e) {
@@ -1420,37 +1420,70 @@ Be direct and actionable, no fluff. Maximum 600 words.`;
     
     document.getElementById('aiContent').innerHTML = `<div class="ai-content">${text}</div>`;
   } catch(e) {
-    document.getElementById('aiContent').innerHTML = `
-      <div class="ai-content">
-        <h3>30-day action plan</h3>
-        <p><strong>Week 1:</strong> Connect Google Search Console, submit sitemap, rewrite slugs for the latest 5 posts.</p>
-        <p><strong>Week 2:</strong> Add meta descriptions to 10 MSC posts. Fill ALT text for all images.</p>
-        <p><strong>Week 3:</strong> Rewrite or set "noindex" on low-value 2024 legacy posts.</p>
-        <p><strong>Week 4:</strong> Create Squarespace blog categories and strengthen internal linking between MSC posts.</p>
-        <h3>10 priority long-tail MSC queries</h3>
-        <ul>
-          <li>how MSC Voyagers Club loyalty program works <strong>(medium)</strong></li>
-          <li>MSC inside vs oceanview cabin price difference <strong>(high)</strong></li>
-          <li>MSC solo cruise tips and reviews <strong>(low)</strong></li>
-          <li>MSC World Europa activities for kids <strong>(medium)</strong></li>
-          <li>what to do during MSC Barcelona stop <strong>(high)</strong></li>
-          <li>is the MSC drinks package worth it <strong>(medium)</strong></li>
-          <li>MSC onboard internet package price <strong>(high)</strong></li>
-          <li>MSC excursions book independently and save <strong>(high)</strong></li>
-          <li>best MSC World Europa cabin for beginners <strong>(medium)</strong></li>
-          <li>one-week MSC Mediterranean itinerary guide <strong>(high)</strong></li>
-        </ul>
-        <h3>Squarespace quick wins (30 min)</h3>
-        <ul>
-          <li>Update site title: Settings > SEO > Site title</li>
-          <li>Add a default social share image</li>
-          <li>Rewrite a family MSC article slug into a keyword-friendly URL</li>
-          <li>Enable automatic image optimization in advanced settings</li>
-          <li>Create 3 blog categories: MSC Cruises / Tips / Destinations</li>
-        </ul>
-      </div>
-    `;
+    renderRuleBasedRecommendations(url, auditData);
   }
+}
+
+function escapeHtml(str) {
+  return (str || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function renderRuleBasedRecommendations(url, data) {
+  const aiSection = document.getElementById('ai-section');
+  aiSection.style.display = 'block';
+
+  const critical = data.items.filter(i => i.type === 'error' || i.priority === 'critical');
+  const important = data.items.filter(i => i.type === 'warn' || i.priority === 'important');
+  const topFixes = [...critical, ...important].slice(0, 6);
+  const moduleCount = {};
+  data.items.forEach(i => {
+    if (i.type === 'error' || i.type === 'warn') moduleCount[i.module] = (moduleCount[i.module] || 0) + 1;
+  });
+  const weakestModules = Object.entries(moduleCount)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 3)
+    .map(([m]) => m);
+
+  const keywordSeed = (data.items.find(i => i.module === 'content' && i.title.includes('Top on-page terms'))?.value || '')
+    .split(',')
+    .map(s => s.trim().replace(/\s*\(\d+\)$/, ''))
+    .filter(Boolean)
+    .slice(0, 5);
+
+  const keywordIdeas = keywordSeed.length
+    ? keywordSeed.map(k => `${k} guide for beginners`)
+    : ['service pricing guide', 'best options comparison', 'common mistakes to avoid', 'checklist before buying', 'step-by-step setup'];
+
+  const steps = topFixes.map((item, idx) => `<li><strong>Priority ${idx + 1}:</strong> ${escapeHtml(item.title)}${item.fix ? ` - ${escapeHtml(item.fix)}` : ''}</li>`).join('');
+  const weakHtml = weakestModules.length
+    ? weakestModules.map(m => `<li><strong>${escapeHtml(m.toUpperCase())}:</strong> Focus this module first for faster score gains.</li>`).join('')
+    : '<li>No major weak module detected. Maintain current SEO baseline.</li>';
+  const kwHtml = keywordIdeas.map(k => `<li>${escapeHtml(k)}</li>`).join('');
+
+  document.getElementById('aiContent').innerHTML = `
+    <div class="ai-content">
+      <h3>Optimization Plan For ${escapeHtml(new URL(url).hostname)}</h3>
+      <p><strong>Current score:</strong> ${data.scores.global}/100. This plan is generated from your live audit findings.</p>
+      <h3>Top Actions (Next 7 Days)</h3>
+      <ul>${steps || '<li>No blocking issue found. Keep improving content depth and internal linking.</li>'}</ul>
+      <h3>Module Focus</h3>
+      <ul>${weakHtml}</ul>
+      <h3>Keyword Opportunities</h3>
+      <ul>${kwHtml}</ul>
+      <h3>30-Minute Quick Wins</h3>
+      <ul>
+        <li>Ensure each key page has a unique title and meta description.</li>
+        <li>Add missing ALT text to high-traffic page images.</li>
+        <li>Add 2-3 internal links from each page to related pages.</li>
+        <li>Confirm robots.txt and sitemap.xml are accessible in browser.</li>
+      </ul>
+    </div>
+  `;
 }
 
 function exportReport() {
