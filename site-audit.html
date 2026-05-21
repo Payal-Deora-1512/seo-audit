@@ -1,0 +1,1517 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SEO Audit Tool</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0c10;
+    --surface: #111318;
+    --surface2: #1a1d25;
+    --border: #2a2d38;
+    --accent: #4fffb0;
+    --accent2: #ff6b35;
+    --accent3: #7c6fff;
+    --warn: #ffb830;
+    --danger: #ff4757;
+    --success: #4fffb0;
+    --text: #e8eaf0;
+    --muted: #6b7090;
+    --card-shadow: 0 4px 24px rgba(0,0,0,0.4);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Grid background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: 
+      linear-gradient(rgba(79,255,176,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(79,255,176,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 40px 24px;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* HEADER */
+  header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 48px;
+    gap: 20px;
+    flex-wrap: wrap;
+  }
+
+  .logo-block h1 {
+    font-family: 'Syne', sans-serif;
+    font-size: 2rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    line-height: 1;
+  }
+
+  .logo-block h1 span {
+    color: var(--accent);
+  }
+
+  .logo-block p {
+    color: var(--muted);
+    font-size: 0.78rem;
+    margin-top: 6px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(79,255,176,0.08);
+    border: 1px solid rgba(79,255,176,0.2);
+    color: var(--accent);
+    font-size: 0.72rem;
+    padding: 6px 12px;
+    border-radius: 100px;
+    font-family: 'DM Mono', monospace;
+    letter-spacing: 0.04em;
+  }
+
+  .badge::before {
+    content: '';
+    width: 7px; height: 7px;
+    background: var(--accent);
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.4; transform: scale(0.8); }
+  }
+
+  /* INPUT SECTION */
+  .input-section {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 32px;
+    margin-bottom: 32px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .input-section::before {
+    content: 'AUDIT';
+    position: absolute;
+    right: -10px; top: -15px;
+    font-family: 'Syne', sans-serif;
+    font-size: 5rem;
+    font-weight: 800;
+    color: rgba(255,255,255,0.02);
+    pointer-events: none;
+    letter-spacing: -0.04em;
+  }
+
+  .input-label {
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+    margin-bottom: 10px;
+    display: block;
+  }
+
+  .url-row {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .url-input {
+    flex: 1;
+    min-width: 260px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    font-size: 0.95rem;
+    padding: 14px 18px;
+    border-radius: 10px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .url-input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(79,255,176,0.08);
+  }
+
+  .url-input::placeholder { color: var(--muted); }
+
+  .btn-audit {
+    background: var(--accent);
+    color: #0a0c10;
+    border: none;
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 0.9rem;
+    padding: 14px 28px;
+    border-radius: 10px;
+    cursor: pointer;
+    letter-spacing: 0.02em;
+    transition: all 0.2s;
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .btn-audit:hover:not(:disabled) {
+    background: #2fffaa;
+    transform: translateY(-1px);
+    box-shadow: 0 8px 24px rgba(79,255,176,0.25);
+  }
+
+  .btn-audit:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  /* API KEY INPUT */
+  .api-row {
+    margin-top: 16px;
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  .api-input {
+    flex: 1;
+    min-width: 260px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    font-size: 0.8rem;
+    padding: 10px 14px;
+    border-radius: 8px;
+    outline: none;
+    transition: border-color 0.2s;
+    letter-spacing: 0.05em;
+  }
+
+  .api-input:focus { border-color: var(--accent3); }
+  .api-input::placeholder { color: var(--muted); font-size: 0.75rem; }
+
+  /* MODULES SELECTOR */
+  .modules-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 10px;
+    margin-top: 20px;
+  }
+
+  .module-toggle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 14px;
+    cursor: pointer;
+    transition: all 0.15s;
+    font-size: 0.78rem;
+    color: var(--muted);
+    user-select: none;
+  }
+
+  .module-toggle.active {
+    border-color: rgba(79,255,176,0.4);
+    background: rgba(79,255,176,0.05);
+    color: var(--accent);
+  }
+
+  .module-toggle .dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--border);
+    flex-shrink: 0;
+    transition: background 0.15s;
+  }
+
+  .module-toggle.active .dot { background: var(--accent); }
+
+  /* PROGRESS */
+  .progress-bar-wrap {
+    background: var(--surface2);
+    border-radius: 100px;
+    height: 4px;
+    margin-top: 20px;
+    overflow: hidden;
+    display: none;
+  }
+
+  .progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--accent3));
+    border-radius: 100px;
+    width: 0%;
+    transition: width 0.4s ease;
+  }
+
+  .progress-status {
+    font-size: 0.75rem;
+    color: var(--muted);
+    margin-top: 8px;
+    display: none;
+    letter-spacing: 0.03em;
+  }
+
+  /* SCORE DASHBOARD */
+  #score-dashboard {
+    display: none;
+    margin-bottom: 32px;
+  }
+
+  .score-grid {
+    display: grid;
+    grid-template-columns: 200px 1fr;
+    gap: 20px;
+    align-items: start;
+  }
+
+  .global-score-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 28px 20px;
+    text-align: center;
+  }
+
+  .score-number {
+    font-family: 'Syne', sans-serif;
+    font-size: 4rem;
+    font-weight: 800;
+    line-height: 1;
+  }
+
+  .score-label {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+    margin-top: 6px;
+  }
+
+  .score-ring {
+    width: 80px; height: 80px;
+    border-radius: 50%;
+    margin: 0 auto 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Syne', sans-serif;
+    font-size: 1.6rem;
+    font-weight: 800;
+    position: relative;
+  }
+
+  .mini-scores {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 12px;
+  }
+
+  .mini-score-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+  }
+
+  .mini-score-card .label {
+    font-size: 0.68rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+    margin-bottom: 8px;
+  }
+
+  .mini-score-card .val {
+    font-family: 'Syne', sans-serif;
+    font-size: 1.6rem;
+    font-weight: 700;
+    line-height: 1;
+  }
+
+  .mini-score-card .bar {
+    height: 3px;
+    background: var(--border);
+    border-radius: 100px;
+    margin-top: 8px;
+    overflow: hidden;
+  }
+
+  .mini-score-card .bar-fill {
+    height: 100%;
+    border-radius: 100px;
+    transition: width 1s ease;
+  }
+
+  /* RESULTS */
+  #results {
+    display: none;
+  }
+
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+
+  .section-header h2 {
+    font-family: 'Syne', sans-serif;
+    font-size: 1.1rem;
+    font-weight: 700;
+  }
+
+  .section-header .count-badge {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    font-size: 0.7rem;
+    padding: 2px 8px;
+    border-radius: 100px;
+    color: var(--muted);
+  }
+
+  .audit-section {
+    margin-bottom: 32px;
+  }
+
+  /* AUDIT ITEMS */
+  .audit-item {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 18px 20px;
+    margin-bottom: 10px;
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 16px;
+    align-items: start;
+    transition: border-color 0.15s;
+    animation: fadeIn 0.3s ease both;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .audit-item:hover { border-color: rgba(255,255,255,0.12); }
+
+  .status-icon {
+    width: 32px; height: 32px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+
+  .status-icon.ok { background: rgba(79,255,176,0.1); }
+  .status-icon.warn { background: rgba(255,184,48,0.1); }
+  .status-icon.error { background: rgba(255,71,87,0.1); }
+  .status-icon.info { background: rgba(124,111,255,0.1); }
+
+  .item-content .item-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 4px;
+  }
+
+  .item-content .item-desc {
+    font-size: 0.78rem;
+    color: var(--muted);
+    line-height: 1.6;
+  }
+
+  .item-content .item-value {
+    font-size: 0.75rem;
+    color: var(--text);
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 6px 10px;
+    margin-top: 8px;
+    word-break: break-all;
+    font-family: 'DM Mono', monospace;
+  }
+
+  .item-content .item-fix {
+    font-size: 0.75rem;
+    color: var(--accent);
+    margin-top: 8px;
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+    line-height: 1.5;
+  }
+
+  .item-content .item-fix::before { content: '→'; flex-shrink: 0; }
+
+  .priority-tag {
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    padding: 3px 8px;
+    border-radius: 100px;
+    font-family: 'DM Mono', monospace;
+    white-space: nowrap;
+    flex-shrink: 0;
+    align-self: flex-start;
+  }
+
+  .priority-tag.critical { background: rgba(255,71,87,0.15); color: var(--danger); border: 1px solid rgba(255,71,87,0.3); }
+  .priority-tag.important { background: rgba(255,184,48,0.15); color: var(--warn); border: 1px solid rgba(255,184,48,0.3); }
+  .priority-tag.ok { background: rgba(79,255,176,0.1); color: var(--accent); border: 1px solid rgba(79,255,176,0.2); }
+  .priority-tag.info { background: rgba(124,111,255,0.1); color: var(--accent3); border: 1px solid rgba(124,111,255,0.3); }
+
+  /* AI RECOMMENDATIONS */
+  #ai-section {
+    display: none;
+    margin-bottom: 32px;
+  }
+
+  .ai-block {
+    background: linear-gradient(135deg, rgba(124,111,255,0.06), rgba(79,255,176,0.04));
+    border: 1px solid rgba(124,111,255,0.2);
+    border-radius: 16px;
+    padding: 28px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .ai-block::before {
+    content: 'AI';
+    position: absolute;
+    right: 20px; top: 10px;
+    font-family: 'Syne', sans-serif;
+    font-size: 4rem;
+    font-weight: 800;
+    color: rgba(124,111,255,0.06);
+    pointer-events: none;
+  }
+
+  .ai-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+
+  .ai-header h2 {
+    font-family: 'Syne', sans-serif;
+    font-size: 1.1rem;
+    font-weight: 700;
+  }
+
+  .ai-loading {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--muted);
+    font-size: 0.8rem;
+  }
+
+  .spinner {
+    width: 16px; height: 16px;
+    border: 2px solid var(--border);
+    border-top-color: var(--accent3);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .ai-content {
+    font-size: 0.85rem;
+    line-height: 1.8;
+    color: var(--text);
+  }
+
+  .ai-content h3 {
+    font-family: 'Syne', sans-serif;
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--accent3);
+    margin: 20px 0 8px;
+  }
+
+  .ai-content h3:first-child { margin-top: 0; }
+
+  .ai-content p { margin-bottom: 12px; }
+
+  .ai-content ul {
+    padding-left: 18px;
+    margin-bottom: 12px;
+  }
+
+  .ai-content li { 
+    margin-bottom: 6px;
+    color: var(--text);
+  }
+
+  .ai-content strong { color: var(--accent); font-weight: 500; }
+
+  .ai-content .priority-kw {
+    background: rgba(79,255,176,0.08);
+    border: 1px solid rgba(79,255,176,0.15);
+    border-radius: 4px;
+    padding: 2px 6px;
+    font-size: 0.78rem;
+    color: var(--accent);
+  }
+
+  /* EXPORT BTN */
+  .actions-row {
+    display: flex;
+    gap: 12px;
+    margin-top: 32px;
+    flex-wrap: wrap;
+  }
+
+  .btn-secondary {
+    background: var(--surface2);
+    color: var(--text);
+    border: 1px solid var(--border);
+    font-family: 'Syne', sans-serif;
+    font-weight: 600;
+    font-size: 0.85rem;
+    padding: 12px 20px;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* EMPTY STATE */
+  .empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--muted);
+  }
+
+  .empty-state .icon { font-size: 3rem; margin-bottom: 16px; opacity: 0.3; }
+  .empty-state p { font-size: 0.85rem; line-height: 1.6; }
+
+  /* TABS */
+  .tabs {
+    display: flex;
+    gap: 4px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 24px;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .tab {
+    padding: 10px 16px;
+    font-size: 0.78rem;
+    font-family: 'DM Mono', monospace;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    color: var(--muted);
+    white-space: nowrap;
+    transition: all 0.15s;
+    margin-bottom: -1px;
+    letter-spacing: 0.03em;
+  }
+
+  .tab:hover { color: var(--text); }
+
+  .tab.active {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+  }
+
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  /* DIVIDER */
+  .divider {
+    height: 1px;
+    background: var(--border);
+    margin: 32px 0;
+  }
+
+  /* SCROLLBAR */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+  @media (max-width: 640px) {
+    .score-grid { grid-template-columns: 1fr; }
+    .logo-block h1 { font-size: 1.5rem; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <header>
+    <div class="logo-block">
+      <h1>SEO <span>Audit</span> Tool</h1>
+      <p>Powered by Claude AI · Squarespace Ready</p>
+    </div>
+    <div class="badge">Real-time analysis</div>
+  </header>
+
+  <!-- INPUT -->
+  <div class="input-section">
+    <label class="input-label">Website URL to audit</label>
+    <div class="url-row">
+      <input type="text" class="url-input" id="urlInput" placeholder="https://example.com">
+      <button class="btn-audit" id="auditBtn" onclick="startAudit()">
+        <span id="btnIcon">⚡</span>
+        <span id="btnText">Start audit</span>
+      </button>
+    </div>
+    <div class="api-row">
+      <input type="password" class="api-input" id="apiKeyInput" placeholder="Anthropic API key (sk-ant-...)">
+      <span style="font-size:0.72rem;color:var(--muted)">Required for AI recommendations</span>
+    </div>
+
+    <label class="input-label" style="margin-top:20px">Audit modules</label>
+    <div class="modules-grid" id="modulesGrid">
+      <div class="module-toggle active" data-module="meta" onclick="toggleModule(this)">
+        <span class="dot"></span>Meta Tags
+      </div>
+      <div class="module-toggle active" data-module="headings" onclick="toggleModule(this)">
+        <span class="dot"></span>Structure H1–H6
+      </div>
+      <div class="module-toggle active" data-module="images" onclick="toggleModule(this)">
+        <span class="dot"></span>Images & Alt
+      </div>
+      <div class="module-toggle active" data-module="links" onclick="toggleModule(this)">
+        <span class="dot"></span>Links & Internal Linking
+      </div>
+      <div class="module-toggle active" data-module="content" onclick="toggleModule(this)">
+        <span class="dot"></span>Content & Words
+      </div>
+      <div class="module-toggle active" data-module="technical" onclick="toggleModule(this)">
+        <span class="dot"></span>Technical SEO
+      </div>
+      <div class="module-toggle active" data-module="squarespace" onclick="toggleModule(this)">
+        <span class="dot"></span>Squarespace
+      </div>
+      <div class="module-toggle active" data-module="keywords" onclick="toggleModule(this)">
+        <span class="dot"></span>Keywords
+      </div>
+    </div>
+
+    <div class="progress-bar-wrap" id="progressWrap">
+      <div class="progress-bar" id="progressBar"></div>
+    </div>
+    <div class="progress-status" id="progressStatus"></div>
+  </div>
+
+  <!-- SCORE DASHBOARD -->
+  <div id="score-dashboard">
+    <div class="score-grid">
+      <div class="global-score-card">
+        <div class="score-ring" id="scoreRing"></div>
+        <div class="score-label">Score Global SEO</div>
+      </div>
+      <div class="mini-scores" id="miniScores"></div>
+    </div>
+  </div>
+
+  <!-- TABS & RESULTS -->
+  <div id="results">
+    <div class="tabs" id="tabsContainer"></div>
+    <div id="tabPanels"></div>
+  </div>
+
+  <!-- AI SECTION -->
+  <div id="ai-section">
+    <div class="ai-block">
+      <div class="ai-header">
+        <span style="font-size:1.2rem">🤖</span>
+        <h2>Personalized AI Recommendations</h2>
+      </div>
+      <div id="aiContent">
+        <div class="ai-loading">
+          <div class="spinner"></div>
+          <span>In-depth analysis in progress...</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ACTIONS -->
+  <div class="actions-row" id="actionsRow" style="display:none">
+    <button class="btn-secondary" onclick="exportReport()">📄 Export report</button>
+    <button class="btn-secondary" onclick="resetAudit()">🔄 New audit</button>
+  </div>
+
+</div>
+
+<script>
+let activeModules = new Set(['meta','headings','images','links','content','technical','squarespace','keywords']);
+let auditData = {};
+let currentUrl = '';
+
+function toggleModule(el) {
+  el.classList.toggle('active');
+  const m = el.dataset.module;
+  if (activeModules.has(m)) activeModules.delete(m);
+  else activeModules.add(m);
+}
+
+function setProgress(pct, msg) {
+  document.getElementById('progressWrap').style.display = 'block';
+  document.getElementById('progressStatus').style.display = 'block';
+  document.getElementById('progressBar').style.width = pct + '%';
+  document.getElementById('progressStatus').textContent = msg;
+}
+
+function getScoreColor(score) {
+  if (score >= 75) return 'var(--success)';
+  if (score >= 50) return 'var(--warn)';
+  return 'var(--danger)';
+}
+
+function getStatusIcon(type) {
+  const icons = { ok: '✓', warn: '⚠', error: '✗', info: 'i' };
+  return icons[type] || 'i';
+}
+
+// Safely parse JSON, attempting to recover truncated JSON
+function safeParseJSON(text) {
+  // Clean markdown fences
+  let cleaned = text.replace(/```json\s*/gi, '').replace(/```\s*/g, '').trim();
+  
+  // Attempt direct parse first
+  try {
+    return JSON.parse(cleaned);
+  } catch(e1) {
+    // Attempt to truncate at last complete item and close the structure
+    try {
+      // Find last complete item by looking for last '}' before a potential ',\n  {'
+      const lastCompleteItem = cleaned.lastIndexOf('\n  }');
+      if (lastCompleteItem > 0) {
+        const truncated = cleaned.substring(0, lastCompleteItem + 4) + '\n  ]\n}';
+        return JSON.parse(truncated);
+      }
+    } catch(e2) {}
+    
+    // Last resort: try to find valid JSON object
+    try {
+      const match = cleaned.match(/\{[\s\S]*"scores"[\s\S]*"items"[\s\S]*\[[\s\S]*/);
+      if (match) {
+        let partial = match[0];
+        // Close all open structures
+        partial = partial + ']}';
+        return JSON.parse(partial);
+      }
+    } catch(e3) {}
+    
+    throw new Error('Invalid JSON after all recovery attempts: ' + e1.message);
+  }
+}
+
+async function startAudit() {
+  const url = document.getElementById('urlInput').value.trim();
+  if (!url) return alert('Enter a URL');
+  
+  currentUrl = url;
+  const btn = document.getElementById('auditBtn');
+  btn.disabled = true;
+  document.getElementById('btnText').textContent = 'Analyzing...';
+  document.getElementById('btnIcon').textContent = '⏳';
+
+  document.getElementById('score-dashboard').style.display = 'none';
+  document.getElementById('results').style.display = 'none';
+  document.getElementById('ai-section').style.display = 'none';
+  document.getElementById('actionsRow').style.display = 'none';
+
+  setProgress(5, 'Initializing audit...');
+  
+  // Collect audit data from live page analysis
+  const apiKey = document.getElementById('apiKeyInput').value.trim();
+  
+  setProgress(20, 'Fetching and analyzing page...');
+  
+  try {
+    const analysisResult = await runStaticAudit(url, apiKey);
+    setProgress(80, 'Generating recommendations...');
+    
+    renderResults(analysisResult);
+    setProgress(100, 'Audit completed ✓');
+    
+    if (apiKey) {
+      await generateAIRecommendations(url, analysisResult, apiKey);
+    } else {
+      document.getElementById('ai-section').style.display = 'none';
+    }
+
+  } catch(e) {
+    console.error('Unexpected audit error:', e);
+    setProgress(0, '');
+    showApiError('Unexpected error: ' + e.message);
+  } finally {
+    btn.disabled = false;
+    document.getElementById('btnText').textContent = 'Run again';
+    document.getElementById('btnIcon').textContent = '⚡';
+  }
+}
+
+async function analyzeWithClaude(url, apiKey) {
+  if (!apiKey) return await runStaticAudit(url, apiKey);
+
+  const activeList = [...activeModules].join(', ');
+  const prompt = `SEO audit for ${url} (French Squarespace cruise blog).
+
+Return ONLY valid JSON, without backticks or markdown. Exact structure:
+{"scores":{"global":0,"meta":0,"content":0,"technical":0,"linking":0,"squarespace":0},"items":[{"module":"","type":"ok|warn|error|info","priority":"critical|important|ok|info","title":"","description":"","value":"","fix":""}]}
+
+Active modules: ${activeList}
+For each active module, generate exactly 4 items. Short descriptions (max 80 chars). Concrete fix (max 100 chars).
+
+Audit points by module:
+- meta: title (length, keywords), meta description, og:image, canonical
+- headings: unique H1, hierarchy, keywords in H1
+- images: alt attributes, file names, WebP
+- links: internal linking, external links, navigation depth
+- content: article length, freshness, duplicate content, FAQ
+- technical: GSC, HTTPS, sitemap, schema.org, Core Web Vitals
+- squarespace: URL slugs, SEO settings, blog categories
+- keywords: target keywords, long-tail, density, PAA
+
+Scores range from 0 to 100. Generate realistic data for a beginner cruise blog.`;
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 8000,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+
+    const data = await res.json();
+    
+    // Handle API-level errors (wrong key, rate limit, etc.)
+    if (data.error) {
+      showApiError(`API error: ${data.error.message}`);
+      return await runStaticAudit(url, null);
+    }
+    
+    const rawText = data.content?.[0]?.text || '';
+    if (!rawText) throw new Error('Empty API response');
+    
+    const parsed = safeParseJSON(rawText);
+    
+    // Validate structure
+    if (!parsed.scores || !Array.isArray(parsed.items)) {
+      throw new Error('Invalid JSON structure');
+    }
+    
+    return parsed;
+  } catch(e) {
+    console.error('Claude API error:', e);
+    showApiError(`AI analysis unavailable (${e.message}). Using static audit.`);
+    return await runStaticAudit(url, null);
+  }
+}
+
+function showApiError(msg) {
+  const el = document.getElementById('progressStatus');
+  el.style.display = 'block';
+  el.style.color = 'var(--warn)';
+  el.textContent = '⚠ ' + msg;
+  setTimeout(() => { el.style.color = 'var(--muted)'; }, 5000);
+}
+
+async function fetchWithFallbacks(targetUrl) {
+  const allOrigins = async () => {
+    const proxyUrl = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(targetUrl);
+    const res = await fetch(proxyUrl, { method: 'GET' });
+    if (!res.ok) throw new Error(`AllOrigins failed (${res.status})`);
+    return { text: await res.text(), source: 'allorigins' };
+  };
+
+  const direct = async () => {
+    const res = await fetch(targetUrl, { method: 'GET' });
+    if (!res.ok) throw new Error(`Direct fetch failed (${res.status})`);
+    return { text: await res.text(), source: 'direct' };
+  };
+
+  const jina = async () => {
+    const proxyUrl = 'https://r.jina.ai/http://' + targetUrl.replace(/^https?:\/\//i, '');
+    const res = await fetch(proxyUrl, { method: 'GET' });
+    if (!res.ok) throw new Error(`Jina proxy failed (${res.status})`);
+    return { text: await res.text(), source: 'jina' };
+  };
+
+  const attempts = [allOrigins, direct, jina];
+  let lastError = null;
+  for (const attempt of attempts) {
+    try {
+      const out = await attempt();
+      // Jina can return transformed markdown/text, so prefer true HTML payloads.
+      if (/<html[\s>]|<head[\s>]|<body[\s>]|<title[\s>]/i.test(out.text)) return out;
+      if (out.source !== 'jina') return out;
+      lastError = new Error('Non-HTML response from proxy');
+    } catch (e) {
+      lastError = e;
+    }
+  }
+  throw lastError || new Error('Unable to fetch target URL');
+}
+
+function normalizeUrl(input) {
+  const url = /^https?:\/\//i.test(input) ? input : `https://${input}`;
+  return new URL(url);
+}
+
+function cleanText(s) {
+  return (s || '').replace(/\s+/g, ' ').trim();
+}
+
+function getWordCount(s) {
+  const words = cleanText(s).split(/\s+/).filter(Boolean);
+  return words.length;
+}
+
+function scoreModule(modItems) {
+  const errors = modItems.filter(i => i.type === 'error').length;
+  const warns = modItems.filter(i => i.type === 'warn').length;
+  const oks = modItems.filter(i => i.type === 'ok').length;
+  const total = modItems.length || 1;
+  return Math.min(100, Math.max(0, Math.round(((oks * 100) - (errors * 30) - (warns * 15)) / total)));
+}
+
+function getTopKeywords(text, limit = 8) {
+  const stop = new Set(['the','and','for','with','that','this','from','are','was','you','your','have','has','but','not','all','our','more','about','into','can','will','how','what','when','where','why','who','les','des','une','dans','pour','avec','sur','pas','plus','est','sont','vos','leur','nous','vous']);
+  const freq = {};
+  cleanText(text).toLowerCase().split(/[^a-z0-9]+/).forEach(w => {
+    if (w.length < 4 || stop.has(w)) return;
+    freq[w] = (freq[w] || 0) + 1;
+  });
+  return Object.entries(freq).sort((a,b) => b[1]-a[1]).slice(0, limit).map(([w,c]) => `${w} (${c})`);
+}
+
+function getMetaContent(doc, key, attr = 'name') {
+  const metas = [...doc.querySelectorAll('meta')];
+  const target = key.toLowerCase();
+  for (const m of metas) {
+    const val = (m.getAttribute(attr) || '').toLowerCase();
+    if (val === target) return cleanText(m.getAttribute('content'));
+  }
+  return '';
+}
+
+async function checkEndpoint(url) {
+  try {
+    const fetched = await fetchWithFallbacks(url);
+    const text = fetched.text || '';
+    return { ok: true, source: fetched.source, text };
+  } catch {
+    return { ok: false, source: null, text: '' };
+  }
+}
+
+async function runStaticAudit(url, apiKey) {
+  const parsedUrl = normalizeUrl(url);
+  const finalUrl = parsedUrl.toString();
+  const items = [];
+
+  const fetched = await fetchWithFallbacks(finalUrl);
+  const html = fetched.text || '';
+  const doc = new DOMParser().parseFromString(html, 'text/html');
+  const pageTitle = cleanText(doc.querySelector('title')?.textContent);
+  const metaDesc = getMetaContent(doc, 'description', 'name');
+  const canonicalRaw = cleanText(doc.querySelector('link[rel="canonical"]')?.getAttribute('href'));
+  const canonical = canonicalRaw ? new URL(canonicalRaw, finalUrl).toString() : '';
+  const ogImage = getMetaContent(doc, 'og:image', 'property');
+  const lang = doc.documentElement?.getAttribute('lang') || '';
+  const h1s = [...doc.querySelectorAll('h1')];
+  const h2s = [...doc.querySelectorAll('h2')];
+  const h3s = [...doc.querySelectorAll('h3')];
+  const images = [...doc.querySelectorAll('img')];
+  const links = [...doc.querySelectorAll('a[href]')];
+  const scripts = [...doc.querySelectorAll('script[type="application/ld+json"]')];
+  const bodyText = cleanText(doc.body?.innerText || '');
+  const wordCount = getWordCount(bodyText);
+  const internalLinks = links.filter(a => {
+    try {
+      return new URL(a.href, finalUrl).hostname === parsedUrl.hostname;
+    } catch {
+      return false;
+    }
+  });
+  const externalLinks = links.length - internalLinks.length;
+  const altCount = images.filter(i => cleanText(i.getAttribute('alt')).length > 0).length;
+  const webpCount = images.filter(i => /\.webp(\?|$)/i.test(i.getAttribute('src') || '')).length;
+  const faqHints = /faq|frequently asked|questions/i.test(html);
+  const squareHints = /squarespace|squarespace-cdn|static1\.squarespace/i.test(html);
+  const hashSlugLinks = links.filter(a => /\/blog\/[a-z0-9]{20,}/i.test(a.getAttribute('href') || '')).length;
+  const topKeywords = getTopKeywords(bodyText);
+  const robotsUrl = `${parsedUrl.origin}/robots.txt`;
+  const sitemapUrl = `${parsedUrl.origin}/sitemap.xml`;
+  const robotsCheck = await checkEndpoint(robotsUrl);
+  const sitemapCheck = await checkEndpoint(sitemapUrl);
+  const robotsHasSitemap = /(?:^|\n)\s*Sitemap:\s*https?:\/\/\S+/im.test(robotsCheck.text);
+  const looksLikeSitemapXml = /<urlset[\s>]|<sitemapindex[\s>]/i.test(sitemapCheck.text);
+
+  if (activeModules.has('meta')) {
+    items.push(
+      pageTitle.length >= 30 && pageTitle.length <= 60
+        ? { module:'meta', type:'ok', priority:'ok', title:'Title length is in range', description:'Title is between 30 and 60 characters.', value: pageTitle }
+        : { module:'meta', type:'warn', priority:'important', title:'Title length can be improved', description:'Best range is 30-60 characters.', value: pageTitle || 'Missing', fix:'Adjust the title length and include a primary keyword.' },
+      metaDesc.length >= 120 && metaDesc.length <= 160
+        ? { module:'meta', type:'ok', priority:'ok', title:'Meta description is optimized', description:'Description length is close to recommended.', value: metaDesc }
+        : { module:'meta', type:'error', priority:'critical', title:'Meta description missing or off-length', description:'Meta description should be 120-160 characters.', value: metaDesc || 'Missing', fix:'Add a unique meta description for this page.' },
+      canonical
+        ? { module:'meta', type:'ok', priority:'ok', title:'Canonical tag detected', description:'Canonical URL helps consolidate indexing signals.', value: canonical }
+        : { module:'meta', type:'warn', priority:'important', title:'Canonical tag not found', description:'Canonical is useful to prevent duplicate indexing.', fix:'Add a canonical tag in page SEO settings.' },
+      ogImage
+        ? { module:'meta', type:'ok', priority:'ok', title:'Open Graph image detected', description:'Social sharing image is configured.', value: ogImage }
+        : { module:'meta', type:'warn', priority:'important', title:'Open Graph image missing', description:'No social preview image was found.', fix:'Set an og:image for stronger social previews.' }
+    );
+  }
+
+  if (activeModules.has('headings')) {
+    items.push(
+      h1s.length === 1
+        ? { module:'headings', type:'ok', priority:'ok', title:'Single H1 found', description:'Page has one H1, which is ideal.', value: cleanText(h1s[0].textContent) }
+        : { module:'headings', type:'error', priority:'critical', title:'H1 structure issue', description:'Page should have exactly one H1.', value: `Detected ${h1s.length} H1 tags`, fix:'Use one descriptive H1 per page.' },
+      h2s.length >= 2
+        ? { module:'headings', type:'ok', priority:'ok', title:'H2 coverage is good', description:'Subheadings help topical structure.', value: `${h2s.length} H2 tags` }
+        : { module:'headings', type:'warn', priority:'important', title:'Limited H2 usage', description:'More H2 sections can improve readability and SEO.', value: `${h2s.length} H2 tags`, fix:'Add meaningful H2s for key sections.' },
+      h3s.length > 0
+        ? { module:'headings', type:'info', priority:'info', title:'H3 tags detected', description:'H3 tags are present for deeper structure.', value: `${h3s.length} H3 tags` }
+        : { module:'headings', type:'warn', priority:'info', title:'No H3 tags detected', description:'Consider H3s when sections need sub-structure.', fix:'Use H3s under major H2 blocks where relevant.' },
+      lang
+        ? { module:'headings', type:'info', priority:'info', title:'Language attribute present', description:'Language declaration supports indexing context.', value: `lang="${lang}"` }
+        : { module:'headings', type:'warn', priority:'important', title:'Language attribute missing', description:'No lang attribute found on <html>.', fix:'Set the document language attribute.' }
+    );
+  }
+
+  if (activeModules.has('images')) {
+    const altPct = images.length ? Math.round((altCount / images.length) * 100) : 100;
+    items.push(
+      images.length
+        ? { module:'images', type:'info', priority:'info', title:'Image count detected', description:'Total images found on this page.', value: `${images.length} images` }
+        : { module:'images', type:'warn', priority:'info', title:'No images detected', description:'No img tags found on this page.', fix:'Use relevant images with optimized metadata.' },
+      altPct >= 90
+        ? { module:'images', type:'ok', priority:'ok', title:'ALT coverage is strong', description:'Most images include alternative text.', value: `${altPct}% ALT coverage` }
+        : { module:'images', type:'error', priority:'critical', title:'ALT coverage is low', description:'Many images are missing ALT text.', value: `${altPct}% ALT coverage`, fix:'Add descriptive ALT text to each important image.' },
+      webpCount > 0
+        ? { module:'images', type:'ok', priority:'ok', title:'WebP usage detected', description:'At least some images use modern formats.', value: `${webpCount} WebP images` }
+        : { module:'images', type:'warn', priority:'important', title:'No WebP image detected', description:'Modern formats can improve load speed.', fix:'Convert key images to WebP or AVIF.' },
+      images.some(i => /image|img|photo|pic/i.test(i.getAttribute('src') || ''))
+        ? { module:'images', type:'info', priority:'info', title:'Image filenames detected', description:'Review filename descriptiveness for SEO value.', value: cleanText(images[0]?.getAttribute('src') || '') }
+        : { module:'images', type:'info', priority:'info', title:'Image filenames available', description:'Use descriptive filenames before upload.', value: cleanText(images[0]?.getAttribute('src') || 'N/A') }
+    );
+  }
+
+  if (activeModules.has('links')) {
+    items.push(
+      internalLinks.length >= 5
+        ? { module:'links', type:'ok', priority:'ok', title:'Internal linking is present', description:'Internal links support crawl depth.', value: `${internalLinks.length} internal links` }
+        : { module:'links', type:'warn', priority:'important', title:'Internal linking is limited', description:'Low internal links can reduce crawl flow.', value: `${internalLinks.length} internal links`, fix:'Add more contextual internal links.' },
+      externalLinks > 0
+        ? { module:'links', type:'info', priority:'info', title:'External references detected', description:'Outbound links can support trust signals.', value: `${externalLinks} external links` }
+        : { module:'links', type:'warn', priority:'info', title:'No external links detected', description:'Consider citing authoritative sources.', fix:'Add selective outbound references when relevant.' },
+      links.length >= 10
+        ? { module:'links', type:'ok', priority:'ok', title:'Link volume is healthy', description:'Page has enough links for navigation context.', value: `${links.length} total links` }
+        : { module:'links', type:'warn', priority:'important', title:'Low link count on page', description:'Sparse linking can weaken navigation pathways.', value: `${links.length} total links`, fix:'Improve nav, footer, and contextual links.' },
+      links.some(a => /nofollow/i.test(a.getAttribute('rel') || ''))
+        ? { module:'links', type:'info', priority:'info', title:'Nofollow attributes detected', description:'Some links use rel directives.', value:'rel="nofollow" found' }
+        : { module:'links', type:'info', priority:'info', title:'No nofollow links found', description:'No rel="nofollow" detected on anchor links.' }
+    );
+  }
+
+  if (activeModules.has('content')) {
+    items.push(
+      wordCount >= 600
+        ? { module:'content', type:'ok', priority:'ok', title:'Content length is substantial', description:'Word count is reasonable for SEO content.', value: `${wordCount} words` }
+        : { module:'content', type:'warn', priority:'critical', title:'Content is relatively short', description:'Short pages may struggle for informational queries.', value: `${wordCount} words`, fix:'Expand content depth and add practical sections.' },
+      faqHints
+        ? { module:'content', type:'ok', priority:'ok', title:'FAQ-style content detected', description:'FAQ sections can capture long-tail demand.' }
+        : { module:'content', type:'warn', priority:'important', title:'No FAQ signals detected', description:'FAQ content can improve query coverage.', fix:'Add a short FAQ block with common questions.' },
+      /updated|last updated|202[4-9]/i.test(bodyText)
+        ? { module:'content', type:'info', priority:'info', title:'Freshness signal found', description:'Detected recency indicator in the content.' }
+        : { module:'content', type:'warn', priority:'info', title:'No clear freshness signal', description:'No obvious update marker was found.', fix:'Show updated dates where appropriate.' },
+      topKeywords.length
+        ? { module:'content', type:'info', priority:'info', title:'Top on-page terms', description:'Most frequent terms detected from visible text.', value: topKeywords.join(', ') }
+        : { module:'content', type:'warn', priority:'info', title:'Insufficient text for keyword extraction', description:'Could not extract meaningful top terms.' }
+    );
+  }
+
+  if (activeModules.has('technical')) {
+    items.push(
+      parsedUrl.protocol === 'https:'
+        ? { module:'technical', type:'ok', priority:'ok', title:'HTTPS is enabled', description:'Secure protocol is active.', value: parsedUrl.origin }
+        : { module:'technical', type:'error', priority:'critical', title:'HTTPS is not enabled', description:'HTTP may reduce trust and security.', fix:'Serve the site over HTTPS.' },
+      scripts.length > 0
+        ? { module:'technical', type:'ok', priority:'ok', title:'Structured data scripts detected', description:'JSON-LD blocks are present.', value: `${scripts.length} JSON-LD scripts` }
+        : { module:'technical', type:'warn', priority:'important', title:'No structured data detected', description:'No JSON-LD schema found on this page.', fix:'Add relevant schema (Organization, Article, FAQ).' },
+      robotsCheck.ok
+        ? { module:'technical', type:'ok', priority:'ok', title:'Robots.txt is accessible', description:'Robots endpoint returned content.', value: `${robotsUrl} (${robotsCheck.source})` }
+        : { module:'technical', type:'error', priority:'critical', title:'Robots.txt could not be fetched', description:'Crawler could not retrieve robots.txt.', value: robotsUrl, fix:'Ensure robots.txt exists and is publicly accessible.' },
+      sitemapCheck.ok && looksLikeSitemapXml
+        ? { module:'technical', type:'ok', priority:'ok', title:'Sitemap XML is accessible', description:'Sitemap endpoint returned valid XML-like structure.', value: `${sitemapUrl} (${sitemapCheck.source})` }
+        : { module:'technical', type:'warn', priority:'important', title:'Sitemap XML not confirmed', description:'Sitemap endpoint is missing or not valid XML sitemap.', value: sitemapUrl, fix:'Publish sitemap.xml and reference it in robots.txt.' }
+    );
+  }
+
+  if (activeModules.has('squarespace')) {
+    items.push(
+      squareHints
+        ? { module:'squarespace', type:'ok', priority:'ok', title:'Squarespace footprint detected', description:'Page includes Squarespace-specific markers.' }
+        : { module:'squarespace', type:'info', priority:'info', title:'Squarespace not clearly detected', description:'No explicit Squarespace markers found on this page.' },
+      hashSlugLinks > 0
+        ? { module:'squarespace', type:'warn', priority:'important', title:'Non-descriptive blog slugs found', description:'Some blog URLs use hash-like slugs.', value: `${hashSlugLinks} hash-like blog links`, fix:'Rewrite slugs to readable, keyword-based paths.' }
+        : { module:'squarespace', type:'ok', priority:'ok', title:'Readable blog slugs detected', description:'No obvious hash-like blog slug pattern found.' },
+      canonical
+        ? { module:'squarespace', type:'ok', priority:'ok', title:'Canonical behavior looks configured', description:'Canonical URL detected for this page.' }
+        : { module:'squarespace', type:'warn', priority:'important', title:'Canonical behavior needs verification', description:'Canonical URL not visible in source.', fix:'Verify canonical settings in Squarespace SEO panel.' },
+      robotsHasSitemap
+        ? { module:'squarespace', type:'info', priority:'info', title:'Robots includes sitemap hint', description:'robots.txt references at least one sitemap.' }
+        : { module:'squarespace', type:'warn', priority:'info', title:'No sitemap hint in robots.txt', description:'Adding Sitemap directive in robots.txt is a common best practice.', fix:'Add a Sitemap: line pointing to your XML sitemap.' }
+    );
+  }
+
+  if (activeModules.has('keywords')) {
+    const titleLower = pageTitle.toLowerCase();
+    const h1Lower = cleanText(h1s[0]?.textContent || '').toLowerCase();
+    const overlap = topKeywords.filter(k => titleLower.includes(k.split(' ')[0]) || h1Lower.includes(k.split(' ')[0])).length;
+    items.push(
+      topKeywords.length >= 5
+        ? { module:'keywords', type:'ok', priority:'ok', title:'Keyword corpus extracted', description:'Enough terms were found for baseline analysis.', value: topKeywords.slice(0,5).join(', ') }
+        : { module:'keywords', type:'warn', priority:'important', title:'Limited keyword corpus', description:'Not enough recurring terms were found.', fix:'Add richer copy around core search intent.' },
+      overlap >= 2
+        ? { module:'keywords', type:'ok', priority:'ok', title:'Title/H1 align with on-page terms', description:'Primary headings overlap with frequent terms.', value: `${overlap} overlaps` }
+        : { module:'keywords', type:'warn', priority:'important', title:'Title/H1 keyword alignment is weak', description:'Main headings do not strongly match frequent terms.', fix:'Align title and H1 with target phrases.' },
+      /who|what|when|where|why|how|\?/i.test(bodyText)
+        ? { module:'keywords', type:'info', priority:'info', title:'Question intent detected', description:'Content includes question-style phrases.' }
+        : { module:'keywords', type:'warn', priority:'info', title:'Question intent is limited', description:'Few question patterns detected.', fix:'Add Q&A blocks for People Also Ask coverage.' },
+      { module:'keywords', type:'info', priority:'info', title:'Audit target host', description:'Keyword analysis was run for this host.', value: parsedUrl.hostname }
+    );
+  }
+
+  const moduleScores = {};
+  const modules = ['meta','headings','images','links','content','technical','squarespace','keywords'];
+  modules.forEach(mod => {
+    if (!activeModules.has(mod)) return;
+    moduleScores[mod] = scoreModule(items.filter(i => i.module === mod));
+  });
+
+  const scoreValues = Object.values(moduleScores);
+  const avgScore = scoreValues.length ? Math.round(scoreValues.reduce((a,b) => a+b, 0) / scoreValues.length) : 30;
+
+  return {
+    scores: {
+      global: avgScore,
+      meta: moduleScores.meta || 0,
+      content: moduleScores.content || 0,
+      technical: moduleScores.technical || 0,
+      linking: moduleScores.links || 0,
+      squarespace: moduleScores.squarespace || 0
+    },
+    items
+  };
+}
+
+function renderResults(data) {
+  auditData = data;
+  
+  // Safety guard
+  if (!data || !Array.isArray(data.items) || !data.scores) {
+    console.error('renderResults: invalid data', data);
+    return;
+  }
+  
+  // Scores
+  const dash = document.getElementById('score-dashboard');
+  dash.style.display = 'block';
+
+  const score = data.scores.global;
+  const color = getScoreColor(score);
+  const emoji = score >= 75 ? '🟢' : score >= 50 ? '🟡' : '🔴';
+  
+  document.getElementById('scoreRing').innerHTML = `
+    <div style="width:80px;height:80px;border-radius:50%;background:conic-gradient(${color} ${score}%, var(--border) 0);display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-size:1.3rem;font-weight:800;color:${color};">${score}</div>
+  `;
+
+  const miniData = [
+    { label: 'Meta SEO', key: 'meta' },
+    { label: 'Content', key: 'content' },
+    { label: 'Technical', key: 'technical' },
+    { label: 'Internal Linking', key: 'linking' },
+    { label: 'Squarespace', key: 'squarespace' },
+  ];
+
+  document.getElementById('miniScores').innerHTML = miniData.map(m => {
+    const val = data.scores[m.key] || 0;
+    const col = getScoreColor(val);
+    return `
+      <div class="mini-score-card">
+        <div class="label">${m.label}</div>
+        <div class="val" style="color:${col}">${val}</div>
+        <div class="bar"><div class="bar-fill" style="width:${val}%;background:${col}"></div></div>
+      </div>
+    `;
+  }).join('');
+
+  // Group items by module
+  const modules = {
+    meta: { label: '🏷 Meta & Tags', items: [] },
+    headings: { label: '📐 Structure', items: [] },
+    images: { label: '🖼 Images', items: [] },
+    links: { label: '🔗 Links', items: [] },
+    content: { label: '📝 Content', items: [] },
+    technical: { label: '⚙️ Technical', items: [] },
+    squarespace: { label: '🟦 Squarespace', items: [] },
+    keywords: { label: '🎯 Keywords', items: [] }
+  };
+
+  data.items.forEach(item => {
+    if (modules[item.module]) modules[item.module].items.push(item);
+  });
+
+  // Build tabs
+  const activeModuleKeys = Object.keys(modules).filter(k => modules[k].items.length > 0);
+  
+  const tabsHTML = activeModuleKeys.map((k, i) => {
+    const errorCount = modules[k].items.filter(x => x.type === 'error').length;
+    const badge = errorCount > 0 ? ` <span style="color:var(--danger);font-size:0.7rem">${errorCount}</span>` : '';
+    return `<div class="tab ${i===0?'active':''}" onclick="switchTab('${k}')" id="tab-${k}">${modules[k].label}${badge}</div>`;
+  }).join('');
+
+  const panelsHTML = activeModuleKeys.map((k, i) => {
+    const mItems = modules[k].items;
+    return `
+      <div class="tab-panel ${i===0?'active':''}" id="panel-${k}">
+        ${mItems.map((item, idx) => renderAuditItem(item, idx)).join('')}
+      </div>
+    `;
+  }).join('');
+
+  document.getElementById('tabsContainer').innerHTML = tabsHTML;
+  document.getElementById('tabPanels').innerHTML = panelsHTML;
+  document.getElementById('results').style.display = 'block';
+  document.getElementById('actionsRow').style.display = 'flex';
+}
+
+function switchTab(key) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('tab-' + key).classList.add('active');
+  document.getElementById('panel-' + key).classList.add('active');
+}
+
+function renderAuditItem(item, idx) {
+  const icons = { ok: '✓', warn: '⚠', error: '✗', info: 'ℹ' };
+  const delay = idx * 0.05;
+  return `
+    <div class="audit-item" style="animation-delay:${delay}s">
+      <div class="status-icon ${item.type}">${icons[item.type] || 'i'}</div>
+      <div class="item-content">
+        <div class="item-title">${item.title}</div>
+        <div class="item-desc">${item.description}</div>
+        ${item.value ? `<div class="item-value">${item.value}</div>` : ''}
+        ${item.fix ? `<div class="item-fix">${item.fix}</div>` : ''}
+      </div>
+      <span class="priority-tag ${item.priority}">${item.priority}</span>
+    </div>
+  `;
+}
+
+async function generateAIRecommendations(url, auditData, apiKey) {
+  const aiSection = document.getElementById('ai-section');
+  aiSection.style.display = 'block';
+  
+  const criticalItems = auditData.items.filter(i => i.priority === 'critical' || i.type === 'error');
+  
+  const prompt = `You are an SEO expert specialized in French cruise blogs on Squarespace.
+
+Analyzed site: ${url}
+Global SEO score: ${auditData.scores.global}/100
+
+Critical points identified:
+${criticalItems.map(i => `- [${i.priority.toUpperCase()}] ${i.title}: ${i.description}`).join('\n')}
+
+Generate personalized, highly practical SEO recommendations for THIS specific site (French MSC cruise blog, Squarespace, solo creator).
+
+Structure your answer in simple HTML (use only: <h3>, <p>, <ul>, <li>, <strong>) with:
+1. **30-day action plan** - 3 top priorities with exact Squarespace steps
+2. **MSC keyword strategy** - 10 long-tail French queries with estimated volume (low/medium/high)
+3. **Suggested editorial calendar** - 4 post ideas for the next 4 weeks
+4. **Squarespace quick wins** - 5 changes doable in under 30 minutes
+
+Be direct and actionable, no fluff. Maximum 600 words.`;
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 2000,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+
+    const data = await res.json();
+    if (data.error) throw new Error(data.error.message);
+    
+    const text = data.content?.[0]?.text;
+    if (!text) throw new Error('Empty response');
+    
+    document.getElementById('aiContent').innerHTML = `<div class="ai-content">${text}</div>`;
+  } catch(e) {
+    document.getElementById('aiContent').innerHTML = `
+      <div class="ai-content">
+        <h3>30-day action plan</h3>
+        <p><strong>Week 1:</strong> Connect Google Search Console, submit sitemap, rewrite slugs for the latest 5 posts.</p>
+        <p><strong>Week 2:</strong> Add meta descriptions to 10 MSC posts. Fill ALT text for all images.</p>
+        <p><strong>Week 3:</strong> Rewrite or set "noindex" on low-value 2024 legacy posts.</p>
+        <p><strong>Week 4:</strong> Create Squarespace blog categories and strengthen internal linking between MSC posts.</p>
+        <h3>10 priority long-tail MSC queries</h3>
+        <ul>
+          <li>how MSC Voyagers Club loyalty program works <strong>(medium)</strong></li>
+          <li>MSC inside vs oceanview cabin price difference <strong>(high)</strong></li>
+          <li>MSC solo cruise tips and reviews <strong>(low)</strong></li>
+          <li>MSC World Europa activities for kids <strong>(medium)</strong></li>
+          <li>what to do during MSC Barcelona stop <strong>(high)</strong></li>
+          <li>is the MSC drinks package worth it <strong>(medium)</strong></li>
+          <li>MSC onboard internet package price <strong>(high)</strong></li>
+          <li>MSC excursions book independently and save <strong>(high)</strong></li>
+          <li>best MSC World Europa cabin for beginners <strong>(medium)</strong></li>
+          <li>one-week MSC Mediterranean itinerary guide <strong>(high)</strong></li>
+        </ul>
+        <h3>Squarespace quick wins (30 min)</h3>
+        <ul>
+          <li>Update site title: Settings > SEO > Site title</li>
+          <li>Add a default social share image</li>
+          <li>Rewrite a family MSC article slug into a keyword-friendly URL</li>
+          <li>Enable automatic image optimization in advanced settings</li>
+          <li>Create 3 blog categories: MSC Cruises / Tips / Destinations</li>
+        </ul>
+      </div>
+    `;
+  }
+}
+
+function exportReport() {
+  if (!auditData || !Array.isArray(auditData.items) || auditData.items.length === 0) {
+    alert('No audit available to export. Run an audit first.');
+    return;
+  }
+  
+  const errors = auditData.items.filter(i => i.type === 'error').length;
+  const warns = auditData.items.filter(i => i.type === 'warn').length;
+  const oks = auditData.items.filter(i => i.type === 'ok').length;
+  
+  let txt = `SEO AUDIT REPORT — ${currentUrl}\n`;
+  txt += `Generated on ${new Date().toLocaleDateString('en-US')}\n`;
+  txt += `${'='.repeat(60)}\n\n`;
+  txt += `GLOBAL SCORE: ${auditData.scores.global}/100\n`;
+  txt += `Critical errors: ${errors} | Warnings: ${warns} | OK: ${oks}\n\n`;
+  
+  const modules = {};
+  auditData.items.forEach(item => {
+    if (!modules[item.module]) modules[item.module] = [];
+    modules[item.module].push(item);
+  });
+
+  Object.keys(modules).forEach(mod => {
+    txt += `\n--- ${mod.toUpperCase()} ---\n`;
+    modules[mod].forEach(item => {
+      const icon = item.type === 'ok' ? '✓' : item.type === 'error' ? '✗' : '⚠';
+      txt += `\n${icon} [${item.priority.toUpperCase()}] ${item.title}\n`;
+      txt += `   ${item.description}\n`;
+      if (item.value) txt += `   Value: ${item.value}\n`;
+      if (item.fix) txt += `   → Fix: ${item.fix}\n`;
+    });
+  });
+
+  const blob = new Blob([txt], { type: 'text/plain;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `seo-audit-${new URL(currentUrl).hostname}-${Date.now()}.txt`;
+  a.click();
+}
+
+function resetAudit() {
+  document.getElementById('score-dashboard').style.display = 'none';
+  document.getElementById('results').style.display = 'none';
+  document.getElementById('ai-section').style.display = 'none';
+  document.getElementById('actionsRow').style.display = 'none';
+  document.getElementById('progressWrap').style.display = 'none';
+  document.getElementById('progressStatus').style.display = 'none';
+  document.getElementById('btnText').textContent = 'Start audit';
+  document.getElementById('btnIcon').textContent = '⚡';
+  auditData = {};
+}
+
+// Auto-start on load with the default URL
+window.addEventListener('load', () => {
+  // Small delay for aesthetics
+  setTimeout(() => {
+    document.getElementById('progressStatus').style.display = 'none';
+  }, 100);
+});
+</script>
+</body>
+</html>
