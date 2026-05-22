@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SEO Audit Tool — Life Cruise Destiny</title>
+<title>SEO Audit Tool</title>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
 <style>
   :root {
@@ -694,8 +694,7 @@
 
   <header>
     <div class="logo-block">
-      <h1>SEO <span>Audit</span> Tool</h1>
-      <p>Powered by Claude AI · Squarespace Ready</p>
+      <h1>SEO <span>Audit</span> Tool</h1
     </div>
     <div class="badge">Real-time analysis</div>
   </header>
@@ -704,7 +703,7 @@
   <div class="input-section">
     <label class="input-label">Website URL to audit</label>
     <div class="url-row">
-      <input type="text" class="url-input" id="urlInput" placeholder="https://lifecruisedestiny.com" value="https://lifecruisedestiny.com">
+      <input type="text" class="url-input" id="urlInput" placeholder="https://example.com">
       <button class="btn-audit" id="auditBtn" onclick="startAudit()">
         <span id="btnIcon">⚡</span>
         <span id="btnText">Start audit</span>
@@ -735,8 +734,8 @@
       <div class="module-toggle active" data-module="technical" onclick="toggleModule(this)">
         <span class="dot"></span>Technical SEO
       </div>
-      <div class="module-toggle active" data-module="squarespace" onclick="toggleModule(this)">
-        <span class="dot"></span>Squarespace
+      <div class="module-toggle active" data-module="CMS" onclick="toggleModule(this)">
+        <span class="dot"></span>CMS
       </div>
       <div class="module-toggle active" data-module="keywords" onclick="toggleModule(this)">
         <span class="dot"></span>Keywords
@@ -791,7 +790,7 @@
 </div>
 
 <script>
-let activeModules = new Set(['meta','headings','images','links','content','technical','squarespace','keywords']);
+let activeModules = new Set(['meta','headings','images','links','content','technical','CMS','keywords']);
 let auditData = {};
 let currentUrl = '';
 
@@ -904,10 +903,10 @@ async function analyzeWithClaude(url, apiKey) {
   if (!apiKey) return await runStaticAudit(url, apiKey);
 
   const activeList = [...activeModules].join(', ');
-  const prompt = `SEO audit for ${url} (French Squarespace cruise blog).
+  const prompt = `SEO audit for ${url} (French CMS cruise blog).
 
 Return ONLY valid JSON, without backticks or markdown. Exact structure:
-{"scores":{"global":0,"meta":0,"content":0,"technical":0,"linking":0,"squarespace":0},"items":[{"module":"","type":"ok|warn|error|info","priority":"critical|important|ok|info","title":"","description":"","value":"","fix":""}]}
+{"scores":{"global":0,"meta":0,"content":0,"technical":0,"linking":0,"CMS":0},"items":[{"module":"","type":"ok|warn|error|info","priority":"critical|important|ok|info","title":"","description":"","value":"","fix":""}]}
 
 Active modules: ${activeList}
 For each active module, generate exactly 4 items. Short descriptions (max 80 chars). Concrete fix (max 100 chars).
@@ -919,7 +918,7 @@ Audit points by module:
 - links: internal linking, external links, navigation depth
 - content: article length, freshness, duplicate content, FAQ
 - technical: GSC, HTTPS, sitemap, schema.org, Core Web Vitals
-- squarespace: URL slugs, SEO settings, blog categories
+- CMS: URL slugs, SEO settings, blog categories
 - keywords: target keywords, long-tail, density, PAA
 
 Scores range from 0 to 100. Generate realistic data for a beginner cruise blog.`;
@@ -1000,10 +999,9 @@ async function fetchWithFallbacks(targetUrl) {
   for (const attempt of attempts) {
     try {
       const out = await attempt();
-      // Jina can return transformed markdown/text, so prefer true HTML payloads.
-      if (/<html[\s>]|<head[\s>]|<body[\s>]|<title[\s>]/i.test(out.text)) return out;
-      if (out.source !== 'jina') return out;
-      lastError = new Error('Non-HTML response from proxy');
+      // Be tolerant: some proxies return transformed or partial markup/text.
+      if (typeof out.text === 'string' && out.text.trim().length > 0) return out;
+      lastError = new Error(`Empty response from ${out.source}`);
     } catch (e) {
       lastError = e;
     }
@@ -1070,6 +1068,7 @@ async function runStaticAudit(url, apiKey) {
 
   const fetched = await fetchWithFallbacks(finalUrl);
   const html = fetched.text || '';
+  const looksLikeHtml = /<html[\s>]|<head[\s>]|<body[\s>]|<title[\s>]|<meta[\s>]|<h1[\s>]/i.test(html);
   const doc = new DOMParser().parseFromString(html, 'text/html');
   const pageTitle = cleanText(doc.querySelector('title')?.textContent);
   const metaDesc = getMetaContent(doc, 'description', 'name');
@@ -1096,7 +1095,7 @@ async function runStaticAudit(url, apiKey) {
   const altCount = images.filter(i => cleanText(i.getAttribute('alt')).length > 0).length;
   const webpCount = images.filter(i => /\.webp(\?|$)/i.test(i.getAttribute('src') || '')).length;
   const faqHints = /faq|frequently asked|questions/i.test(html);
-  const squareHints = /squarespace|squarespace-cdn|static1\.squarespace/i.test(html);
+  const squareHints = /CMS|CMS-cdn|static1\.CMS/i.test(html);
   const hashSlugLinks = links.filter(a => /\/blog\/[a-z0-9]{20,}/i.test(a.getAttribute('href') || '')).length;
   const topKeywords = getTopKeywords(bodyText);
   const robotsUrl = `${parsedUrl.origin}/robots.txt`;
@@ -1105,6 +1104,13 @@ async function runStaticAudit(url, apiKey) {
   const sitemapCheck = await checkEndpoint(sitemapUrl);
   const robotsHasSitemap = /(?:^|\n)\s*Sitemap:\s*https?:\/\/\S+/im.test(robotsCheck.text);
   const looksLikeSitemapXml = /<urlset[\s>]|<sitemapindex[\s>]/i.test(sitemapCheck.text);
+
+  if (!looksLikeHtml) {
+    items.push(
+      { module:'technical', type:'warn', priority:'important', title:'Source response is not standard HTML', description:'The fetched content appears transformed by a proxy.', value:`Source: ${fetched.source}`, fix:'Try auditing with full https URL and rerun. If possible, host tool behind a backend proxy.' },
+      { module:'technical', type:'info', priority:'info', title:'Raw response received', description:'Audit continued in fallback mode to avoid hard failure.' }
+    );
+  }
 
   if (activeModules.has('meta')) {
     items.push(
@@ -1209,20 +1215,20 @@ async function runStaticAudit(url, apiKey) {
     );
   }
 
-  if (activeModules.has('squarespace')) {
+  if (activeModules.has('CMS')) {
     items.push(
       squareHints
-        ? { module:'squarespace', type:'ok', priority:'ok', title:'Squarespace footprint detected', description:'Page includes Squarespace-specific markers.' }
-        : { module:'squarespace', type:'info', priority:'info', title:'Squarespace not clearly detected', description:'No explicit Squarespace markers found on this page.' },
+        ? { module:'CMS', type:'ok', priority:'ok', title:'CMS footprint detected', description:'Page includes CMS-specific markers.' }
+        : { module:'CMS', type:'info', priority:'info', title:'CMS not clearly detected', description:'No explicit CMS markers found on this page.' },
       hashSlugLinks > 0
-        ? { module:'squarespace', type:'warn', priority:'important', title:'Non-descriptive blog slugs found', description:'Some blog URLs use hash-like slugs.', value: `${hashSlugLinks} hash-like blog links`, fix:'Rewrite slugs to readable, keyword-based paths.' }
-        : { module:'squarespace', type:'ok', priority:'ok', title:'Readable blog slugs detected', description:'No obvious hash-like blog slug pattern found.' },
+        ? { module:'CMS', type:'warn', priority:'important', title:'Non-descriptive blog slugs found', description:'Some blog URLs use hash-like slugs.', value: `${hashSlugLinks} hash-like blog links`, fix:'Rewrite slugs to readable, keyword-based paths.' }
+        : { module:'CMS', type:'ok', priority:'ok', title:'Readable blog slugs detected', description:'No obvious hash-like blog slug pattern found.' },
       canonical
-        ? { module:'squarespace', type:'ok', priority:'ok', title:'Canonical behavior looks configured', description:'Canonical URL detected for this page.' }
-        : { module:'squarespace', type:'warn', priority:'important', title:'Canonical behavior needs verification', description:'Canonical URL not visible in source.', fix:'Verify canonical settings in Squarespace SEO panel.' },
+        ? { module:'CMS', type:'ok', priority:'ok', title:'Canonical behavior looks configured', description:'Canonical URL detected for this page.' }
+        : { module:'CMS', type:'warn', priority:'important', title:'Canonical behavior needs verification', description:'Canonical URL not visible in source.', fix:'Verify canonical settings in CMS SEO panel.' },
       robotsHasSitemap
-        ? { module:'squarespace', type:'info', priority:'info', title:'Robots includes sitemap hint', description:'robots.txt references at least one sitemap.' }
-        : { module:'squarespace', type:'warn', priority:'info', title:'No sitemap hint in robots.txt', description:'Adding Sitemap directive in robots.txt is a common best practice.', fix:'Add a Sitemap: line pointing to your XML sitemap.' }
+        ? { module:'CMS', type:'info', priority:'info', title:'Robots includes sitemap hint', description:'robots.txt references at least one sitemap.' }
+        : { module:'CMS', type:'warn', priority:'info', title:'No sitemap hint in robots.txt', description:'Adding Sitemap directive in robots.txt is a common best practice.', fix:'Add a Sitemap: line pointing to your XML sitemap.' }
     );
   }
 
@@ -1245,7 +1251,7 @@ async function runStaticAudit(url, apiKey) {
   }
 
   const moduleScores = {};
-  const modules = ['meta','headings','images','links','content','technical','squarespace','keywords'];
+  const modules = ['meta','headings','images','links','content','technical','CMS','keywords'];
   modules.forEach(mod => {
     if (!activeModules.has(mod)) return;
     moduleScores[mod] = scoreModule(items.filter(i => i.module === mod));
@@ -1261,7 +1267,7 @@ async function runStaticAudit(url, apiKey) {
       content: moduleScores.content || 0,
       technical: moduleScores.technical || 0,
       linking: moduleScores.links || 0,
-      squarespace: moduleScores.squarespace || 0
+      CMS: moduleScores.CMS || 0
     },
     items
   };
@@ -1293,7 +1299,7 @@ function renderResults(data) {
     { label: 'Content', key: 'content' },
     { label: 'Technical', key: 'technical' },
     { label: 'Internal Linking', key: 'linking' },
-    { label: 'Squarespace', key: 'squarespace' },
+    { label: 'CMS', key: 'CMS' },
   ];
 
   document.getElementById('miniScores').innerHTML = miniData.map(m => {
@@ -1316,7 +1322,7 @@ function renderResults(data) {
     links: { label: '🔗 Links', items: [] },
     content: { label: '📝 Content', items: [] },
     technical: { label: '⚙️ Technical', items: [] },
-    squarespace: { label: '🟦 Squarespace', items: [] },
+    CMS: { label: '🟦 CMS', items: [] },
     keywords: { label: '🎯 Keywords', items: [] }
   };
 
@@ -1378,7 +1384,7 @@ async function generateAIRecommendations(url, auditData, apiKey) {
   
   const criticalItems = auditData.items.filter(i => i.priority === 'critical' || i.type === 'error');
   
-  const prompt = `You are an SEO expert specialized in French cruise blogs on Squarespace.
+  const prompt = `You are an SEO expert specialized in French cruise blogs on CMS.
 
 Analyzed site: ${url}
 Global SEO score: ${auditData.scores.global}/100
@@ -1386,13 +1392,13 @@ Global SEO score: ${auditData.scores.global}/100
 Critical points identified:
 ${criticalItems.map(i => `- [${i.priority.toUpperCase()}] ${i.title}: ${i.description}`).join('\n')}
 
-Generate personalized, highly practical SEO recommendations for THIS specific site (French MSC cruise blog, Squarespace, solo creator).
+Generate personalized, highly practical SEO recommendations for THIS specific site (French MSC cruise blog, CMS, solo creator).
 
 Structure your answer in simple HTML (use only: <h3>, <p>, <ul>, <li>, <strong>) with:
-1. **30-day action plan** - 3 top priorities with exact Squarespace steps
+1. **30-day action plan** - 3 top priorities with exact CMS steps
 2. **MSC keyword strategy** - 10 long-tail French queries with estimated volume (low/medium/high)
 3. **Suggested editorial calendar** - 4 post ideas for the next 4 weeks
-4. **Squarespace quick wins** - 5 changes doable in under 30 minutes
+4. **CMS quick wins** - 5 changes doable in under 30 minutes
 
 Be direct and actionable, no fluff. Maximum 600 words.`;
 
